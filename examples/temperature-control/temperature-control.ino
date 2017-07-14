@@ -10,7 +10,7 @@
 
 //Global Variables
 //Initialize oneWire on DIO 10 to read from DS18B20 temperature sensors
-OneWire ds(TEMP_PROBE_CHAN);
+OneWire ow(TEMP_PROBE_CHAN);
 byte mainTempProbeAddr[8] = {0x28, 0xFF, 0xD7, 0x23, 0xA0, 0x16, 0x04, 0x6E};
 
 void setup() {
@@ -37,30 +37,29 @@ void loop() {
 float readTempProbe(byte* address)
 {  
   //Initialize communication
-  ds.reset();
-  ds.select(address);
-  ds.write(0x44, 1);
+  ow.reset();
+  ow.select(address);
+  ow.write(0x44, 1);
   delay(1000); 
-  ds.reset(); 
-  ds.select(address);    
-  ds.write(0xBE);  
+  ow.reset(); 
+  ow.select(address);    
+  ow.write(0xBE);  
 
   //Read Data
   byte data[12];
   for(int i = 0; i < 9; i++) {
-    data[i] = ds.read();   
+    data[i] = ow.read();   
   }
 
-  if(ds.crc8(data, 8) != data[8])
+  if(ow.crc8(data, 8) != data[8])
   {
     Serial.println("Failed CRC");
     return -1000;
   }
 
   //Convert data to temp
-  int16_t raw = (data[1] << 8) | data[0];  
-  float celsius = (float)raw / 16.0;
-  float fahrenheit = celsius * 1.8 + 32.0; 
+  int16_t raw = (data[1] << 8) | data[0];    
+  float fahrenheit = (float)raw * 0.1125 + 32.0;
   Serial.print(fahrenheit);
   Serial.println(" F");
   return fahrenheit;
@@ -89,7 +88,7 @@ bool updateCoolingMode(float tempF)
 void printOneWireDeviceAddresses()
 {
   byte addr[8];
-  while(ds.search(addr)) 
+  while(ow.search(addr)) 
   {
     Serial.print("Address - 0x");
     for (int i = 0; i < 8; i++) 
